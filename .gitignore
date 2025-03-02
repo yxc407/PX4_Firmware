@@ -13,7 +13,7 @@
 .settings
 .swp
 .~lock.*
-.vscode
+.vscode/
 Testing/
 Packages/*
 build/*
