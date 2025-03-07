@@ -169,7 +169,7 @@ else
 fi
 
 # Baro on I2C3
-ms5611 -X start
+# ms5611 -X start
 
 unset INA_CONFIGURED
 unset HAVE_PM2
