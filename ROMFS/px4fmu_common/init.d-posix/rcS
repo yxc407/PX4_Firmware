@@ -353,3 +353,6 @@ fi
 
 mavlink boot_complete
 replay trystart
+
+# switchblade
+sb_commander start

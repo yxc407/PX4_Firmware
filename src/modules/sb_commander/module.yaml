@@ -1,0 +1,10 @@
+module_name: Switchblade Commander
+description:
+  short: CLI interface for Switchblade attack commands
+  long: |
+    This module provides a CLI interface to control the "Switchblade" functionality.
+    It parses user commands (`attack_position` with local or global coordinates, 
+    `attack_trigger`, and `attack_cancel`) and publishes the corresponding 
+    `switchblade_command_s` uORB message. All errors and important information are 
+    printed to the console via PX4_WARN/PX4_ERR. The CLI command returns immediately 
+    after publishing the message (non-blocking execution).

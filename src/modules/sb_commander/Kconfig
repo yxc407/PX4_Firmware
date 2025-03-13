@@ -1,0 +1,5 @@
+menuconfig MODULES_SB_COMMANDER
+	bool "sb_commander"
+	default n
+	---help---
+		Enable support for sb_commander
