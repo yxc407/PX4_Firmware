@@ -1,9 +1,43 @@
 /****************************************************************************
  *
- *   Copyright (c) 2018 PX4 Development Team. All rights reserved.
- *   (版權宣告省略)
+ *   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name PX4 nor the names of its contributors may be
+ *    used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+/**
+ * @file sb_commander.cpp
+ * Switchblade commander, this control interface is used when the switchblade drone attacks.
+ *
+ * This file is derived from PX4 codebase with additional developments by YuXiuChen.
+ *
+ * @author YuXiuChen <yuxiuchen407@gmail.com>
+ */
 
 #include "sb_commander.h"
 
@@ -24,10 +58,6 @@ SwitchbladeCommander::SwitchbladeCommander()
     _cmd.attack_position[1] = 0.0f;
     _cmd.attack_position[2] = 0.0f;
     _cmd.attack_trigger = false;
-}
-
-SwitchbladeCommander::~SwitchbladeCommander()
-{
 }
 
 int SwitchbladeCommander::task_spawn(int argc, char *argv[])
@@ -79,9 +109,9 @@ int SwitchbladeCommander::custom_command(int argc, char *argv[])
         }
         _instance->_cmd.attack_trigger = false;
         PX4_INFO("Updated: attack_cancel");
-    } else if (strcmp(argv[0], "setpoint") == 0) {
+    } else if (strcmp(argv[0], "target") == 0) {
         if (argc != 5) {
-            PX4_ERR("Usage: sb_commander setpoint [local|global] x y z");
+            PX4_ERR("Usage: sb_commander target [local|global] [x|lon] [y|lat] [z|alt]");
             return PX4_ERROR;
         }
         if (strcmp(argv[1], "local") == 0) {
@@ -159,7 +189,7 @@ Commands:
     start       - Start the module (with default parameters)
     stop        - Stop the module
     status      - Show current status
-    setpoint    - Update attack position: setpoint [local|global] x y z
+    target    - Update attack position: target [local|global] [x|lon] [y|lat] [z|alt]
     attack      - Set attack_trigger true
 )DESCR_STR");
 
@@ -167,7 +197,7 @@ Commands:
     PRINT_MODULE_USAGE_COMMAND("start");
     PRINT_MODULE_USAGE_COMMAND("stop");
     PRINT_MODULE_USAGE_COMMAND("status");
-    PRINT_MODULE_USAGE_COMMAND("setpoint");
+    PRINT_MODULE_USAGE_COMMAND("target");
     PRINT_MODULE_USAGE_COMMAND("attack");
     PRINT_MODULE_USAGE_COMMAND("cancel");
     return 0;
