@@ -111,7 +111,7 @@ int SwitchbladeCommander::custom_command(int argc, char *argv[])
         PX4_INFO("Updated: attack_cancel");
     } else if (strcmp(argv[0], "target") == 0) {
         if (argc != 5) {
-            PX4_ERR("Usage: sb_commander target [local|global] [x|lon] [y|lat] [z|alt]");
+            PX4_ERR("Usage: sb_commander target local|global x|lon y|lat z|alt");
             return PX4_ERROR;
         }
         if (strcmp(argv[1], "local") == 0) {
@@ -185,21 +185,16 @@ int SwitchbladeCommander::print_usage(const char *reason)
         R"DESCR_STR(
 ### Description
 This is the switchblade control interface module.
-Commands:
-    start       - Start the module (with default parameters)
-    stop        - Stop the module
-    status      - Show current status
-    target    - Update attack position: target [local|global] [x|lon] [y|lat] [z|alt]
-    attack      - Set attack_trigger true
-)DESCR_STR");
+        )DESCR_STR");
 
     PRINT_MODULE_USAGE_NAME("sb_commander", "module");
     PRINT_MODULE_USAGE_COMMAND("start");
     PRINT_MODULE_USAGE_COMMAND("stop");
     PRINT_MODULE_USAGE_COMMAND("status");
-    PRINT_MODULE_USAGE_COMMAND("target");
-    PRINT_MODULE_USAGE_COMMAND("attack");
-    PRINT_MODULE_USAGE_COMMAND("cancel");
+    PRINT_MODULE_USAGE_COMMAND_DESCR("target", "Set attack target position");
+    PRINT_MODULE_USAGE_ARG("local|global x|lon y|lat z|alt", "position type and posiiton", false);
+    PRINT_MODULE_USAGE_COMMAND_DESCR("attack", "Execute attack");
+    PRINT_MODULE_USAGE_COMMAND_DESCR("cancel", "Interrupt attack");
     return 0;
 }
 
