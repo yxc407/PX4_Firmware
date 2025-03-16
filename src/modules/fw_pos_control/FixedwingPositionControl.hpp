@@ -44,6 +44,10 @@
  * @author Andreas Antener <andreas@uaventure.com>
  */
 
+#ifndef DEBUG
+#define DEBUG
+#endif // DEBUG
+
 #ifndef FIXEDWINGPOSITIONCONTROL_HPP_
 #define FIXEDWINGPOSITIONCONTROL_HPP_
 
@@ -102,8 +106,13 @@
 #ifdef CONFIG_FIGURE_OF_EIGHT
 #include "figure_eight/FigureEight.hpp"
 #include <uORB/topics/figure_eight_status.h>
-
 #endif // CONFIG_FIGURE_OF_EIGHT
+
+#ifdef CONFIG_MODULES_SB_COMMANDER
+// #include "scs/SCS.h"
+#include <uORB/topics/switchblade_command.h>
+#include <uORB/topics/switchblade_status.h>
+#endif // CONFIG_MODULES_SB_COMMANDER
 
 using namespace launchdetection;
 using namespace runwaytakeoff;
@@ -111,6 +120,7 @@ using namespace time_literals;
 
 using matrix::Vector2d;
 using matrix::Vector2f;
+using matrix::Vector3f;
 
 // [m] initial distance of waypoint in front of plane in heading hold mode
 static constexpr float HDG_HOLD_DIST_NEXT = 3000.0f;
@@ -214,6 +224,10 @@ private:
 	uORB::Subscription _vehicle_command_sub{ORB_ID(vehicle_command)};
 	uORB::Subscription _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
+#ifdef CONFIG_MODULES_SB_COMMANDER
+	uORB::Subscription _switchblade_command_sub{ORB_ID(switchblade_command)};
+	uORB::Subscription _switchblade_status_sub{ORB_ID(switchblade_status)};
+#endif // CONFIG_MODULES_SB_COMMANDER
 
 	uORB::Publication<vehicle_attitude_setpoint_s> _attitude_sp_pub;
 	uORB::Publication<vehicle_local_position_setpoint_s> _local_pos_sp_pub{ORB_ID(vehicle_local_position_setpoint)};
@@ -234,6 +248,12 @@ private:
 	vehicle_control_mode_s _control_mode{};
 	vehicle_local_position_s _local_pos{};
 	vehicle_status_s _vehicle_status{};
+#ifdef CONFIG_MODULES_SB_COMMANDER
+	switchblade_command_s _switchblade_command{};
+
+	bool _attack_trigger{false};
+    Vector3f _attack_position{0.0f, 0.0f, 0.0f};
+#endif // CONFIG_MODULES_SB_COMMANDER
 
 	Vector2f _lpos_where_backtrans_started;
 
@@ -259,6 +279,11 @@ private:
 		FW_POSCTRL_MODE_MANUAL_POSITION,
 		FW_POSCTRL_MODE_MANUAL_ALTITUDE,
 		FW_POSCTRL_MODE_TRANSITON,
+#ifdef DEBUG
+#ifdef CONFIG_MODULES_SB_COMMANDER
+        FW_POSCTRL_MODE_ATTACK,
+#endif // CONFIG_MODULES_SB_COMMANDER
+#endif // DEBUG
 		FW_POSCTRL_MODE_OTHER
 	} _control_mode_current{FW_POSCTRL_MODE_OTHER}; // used to check if the mode has changed
 
@@ -273,10 +298,10 @@ private:
 	double _current_longitude{0};
 	float _current_altitude{0.f};
 
-	float _roll{0.f};
-	float _pitch{0.0f};
-	float _yaw{0.0f};
-	float _yawrate{0.0f};
+	float _roll{0.f};     // rad
+	float _pitch{0.0f};   // rad
+	float _yaw{0.0f};     // rad
+	float _yawrate{0.0f}; // rad/s
 
 	float _body_acceleration_x{0.f};
 	float _body_velocity_x{0.f};
@@ -400,6 +425,13 @@ private:
 	TECS _tecs;
 
 	bool _tecs_is_running{false};
+
+// #ifdef CONFIG_MODULES_SB_COMMANDER
+//     // SCS
+
+//     // switchblade control system - suicide control
+//     SCS _scs;
+// #endif // CONFIG_MODULES_SB_COMMANDER
 
 	// VTOL / TRANSITION
 	bool _is_vtol_tailsitter{false};
@@ -715,7 +747,22 @@ private:
 	void control_backtransition(const float control_interval, const Vector2f &ground_speed,
 				    const position_setpoint_s &pos_sp_curr);
 
-	float get_tecs_pitch();
+#ifdef CONFIG_MODULES_SB_COMMANDER
+    void control_attack(const hrt_abstime &now, const float control_interval, const Vector2f &ground_speed);
+
+    struct AttackFlag {
+        bool heading_ok{false};
+        bool distance_ok{false};
+        bool too_close{false};
+    } _attack_flag;
+
+    float _time_start_heading_check{0.0f};
+    float _time_start_distance_check{0.0f};
+
+    // float get_scs_pitch();
+#endif // CONFIG_MODULES_SB_COMMANDER
+
+    float get_tecs_pitch();
 	float get_tecs_thrust();
 
 	float get_manual_airspeed_setpoint();
@@ -737,6 +784,9 @@ private:
 
 	void reset_takeoff_state();
 	void reset_landing_state();
+#ifdef CONFIG_MODULES_SB_COMMANDER
+    void reset_attack_state();
+#endif // CONFIG_MODULES_SB_COMMANDER
 
 	/**
 	 * @brief Decides which control mode to execute.
