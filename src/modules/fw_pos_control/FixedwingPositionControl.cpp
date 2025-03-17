@@ -2399,7 +2399,7 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
         _att_sp.yaw_body = _yaw;
         _att_sp.thrust_body[0] = 1.f;
         // Test using fixed angle with npfg controller
-        _att_sp.pitch_body = radians(45.f);
+        _att_sp.pitch_body = radians(-45.f);
         _att_sp.roll_body = getCorrectedNpfgRollSetpoint();
         // _att_sp.pitch_body = get_scs_pitch();
         // _att_sp.roll_body = get_scs_roll();
