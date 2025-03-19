@@ -109,7 +109,9 @@
 #endif // CONFIG_FIGURE_OF_EIGHT
 
 #ifdef CONFIG_MODULES_SB_COMMANDER
-// #include "scs/SCS.h"
+#ifdef DEBUG
+#include "scs/SCS.h"
+#endif // DEBUG
 #include <uORB/topics/switchblade_command.h>
 #include <uORB/topics/switchblade_status.h>
 #endif // CONFIG_MODULES_SB_COMMANDER
@@ -279,11 +281,9 @@ private:
 		FW_POSCTRL_MODE_MANUAL_POSITION,
 		FW_POSCTRL_MODE_MANUAL_ALTITUDE,
 		FW_POSCTRL_MODE_TRANSITON,
-#ifdef DEBUG
 #ifdef CONFIG_MODULES_SB_COMMANDER
         FW_POSCTRL_MODE_ATTACK,
 #endif // CONFIG_MODULES_SB_COMMANDER
-#endif // DEBUG
 		FW_POSCTRL_MODE_OTHER
 	} _control_mode_current{FW_POSCTRL_MODE_OTHER}; // used to check if the mode has changed
 
@@ -426,12 +426,15 @@ private:
 
 	bool _tecs_is_running{false};
 
-// #ifdef CONFIG_MODULES_SB_COMMANDER
-//     // SCS
+#ifdef DEBUG
+#ifdef CONFIG_MODULES_SB_COMMANDER
+    // SCS
 
-//     // switchblade control system - suicide control
-//     SCS _scs;
-// #endif // CONFIG_MODULES_SB_COMMANDER
+    // switchblade control system - suicide control
+    SCS _scs_pitch;
+    // SCS _scs_roll;
+#endif // CONFIG_MODULES_SB_COMMANDER
+#endif // DEBUG
 
 	// VTOL / TRANSITION
 	bool _is_vtol_tailsitter{false};
@@ -756,10 +759,16 @@ private:
         bool too_close{false};
     } _attack_flag;
 
-    float _time_start_heading_check{0.0f};
-    float _time_start_distance_check{0.0f};
+    float _time_start_heading_check{0.f};
+    float _time_start_distance_check{0.f};
 
-    // float get_scs_pitch();
+    bool _gain_realign_pos{false};
+    Vector2f _realign_pos;
+
+#ifdef DEBUG
+    float get_scs_pitch();
+    float get_scs_roll();
+#endif // DEBUG
 #endif // CONFIG_MODULES_SB_COMMANDER
 
     float get_tecs_pitch();

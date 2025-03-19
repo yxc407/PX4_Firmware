@@ -46,12 +46,22 @@ using matrix::Vector2f;
 using matrix::wrap_pi;
 using namespace time_literals;
 
-void SCS::init()
+void SCS::init(float kp, float ki, float kd)
 {
-
+    _kp = kp;
+    _ki = ki;
+    _kd = kd;
 }
 
-void SCS::update()
+void SCS::update(float sp, float val, float dt)
 {
-    
+    _setpoint = pid_calculate(sp, val, dt);
+}
+
+float SCS::pid_calculate(float sp, float val, float dt)
+{
+    // float err = sp - val;
+    float output = _kp * sp;
+
+    return output;
 }

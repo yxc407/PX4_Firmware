@@ -60,22 +60,20 @@ public:
     SCS() = default;
     ~SCS() = default;
 
-    void init();
+    void init(float kp, float ki, float kd);
 
-    void update();
+    void update(float sp, float val, float dt);
 
-    inline float get_pitch_setpoint() { return _pitch_cmd; }
-
-    inline float get_roll_setpoint() { return _roll_cmd; }
+    inline float get_setpoint() { return _setpoint; }
 
 private:
-    static constexpr float MAX_PITCH_RAD = math::radians(60.f);
+    float pid_calculate(float sp, float val, float dt);
 
 private:
-    float _pitch_cmd{0.f};
-    float _roll_cmd{0.f};
-
-    hrt_abstime _update_timestamp{0}; ///< last timestamp of the update function call.
+    float _kp{0.f};
+    float _ki{0.f};
+    float _kd{0.f};
+    float _setpoint{0.f};
 };
 
 #endif /* SCS_H */

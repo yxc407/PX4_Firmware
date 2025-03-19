@@ -79,9 +79,24 @@ FixedwingPositionControl::FixedwingPositionControl(bool vtol) :
 
 	_roll_slew_rate.setSlewRate(radians(_param_fw_pn_r_slew_max.get()));
 	_roll_slew_rate.setForcedValue(0.f);
-// #ifdef CONFIG_MODULES_SB_COMMANDER
-//     _scs.init();
-// #endif // CONFIG_MODULES_SB_COMMANDER
+#ifdef DEBUG
+#ifdef CONFIG_MODULES_SB_COMMANDER
+    float kp_pitch = 1.4f;
+    float ki_pitch = 0.f;
+    float kd_pitch = 0.f;
+    // float integral_limit_pitch = 2.f;
+    // float output_limit_pitch = radians(60.f);
+
+    // float kp_roll = 0.5f;
+    // float ki_roll = 0.f;
+    // float kd_roll = 0.f;
+    // float integral_limit_roll = 0.f;
+    // float output_limit_roll = radians(45.f);
+
+    _scs_pitch.init(kp_pitch, ki_pitch, kd_pitch);
+    // _scs_roll.init(kp_roll, ki_roll, kd_roll, integral_limit_roll, output_limit_roll);
+#endif // CONFIG_MODULES_SB_COMMANDER
+#endif // DEBUG
 }
 
 FixedwingPositionControl::~FixedwingPositionControl()
@@ -690,17 +705,15 @@ FixedwingPositionControl::set_control_mode_current(const hrt_abstime &now)
 
 	_skipping_takeoff_detection = false;
 
-#ifdef DEBUG
 #ifdef CONFIG_MODULES_SB_COMMANDER
     if (_control_mode.flag_control_offboard_enabled && _attack_trigger) {
 		_control_mode_current = FW_POSCTRL_MODE_ATTACK;
 		return;
 	}
 #endif // CONFIG_MODULES_SB_COMMANDER
-#endif // DEBUG
 
 	if (_control_mode.flag_control_offboard_enabled && _position_setpoint_current_valid
-	    && _control_mode.flag_control_position_enabled) {
+	    && _control_mode.flag_control_position_enabled && !_attack_trigger) {
 		if (PX4_ISFINITE(_pos_sp_triplet.current.vx) && PX4_ISFINITE(_pos_sp_triplet.current.vy)
 		    && PX4_ISFINITE(_pos_sp_triplet.current.vz)) {
 			// Offboard position with velocity setpoints
@@ -2251,7 +2264,6 @@ void FixedwingPositionControl::control_backtransition(const float control_interv
 	_att_sp.pitch_body = get_tecs_pitch();
 }
 
-#ifdef DEBUG
 #ifdef CONFIG_MODULES_SB_COMMANDER
 void
 FixedwingPositionControl::control_attack(const hrt_abstime &now, const float control_interval, const Vector2f &ground_speed)
@@ -2301,7 +2313,7 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
 
             // PX4_INFO("heading error: %f", (double)heading_error * 180 / M_PI);
 
-            // |heading_error| < 5 deg
+            // |heading_error| < 10 deg
             const float HEADING_THR = math::radians(10.f);
             bool is_heading_ok = (fabsf(heading_error) < HEADING_THR);
 
@@ -2312,7 +2324,7 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
                     PX4_INFO("Start Heading Check");
                 } else {
                     const float elapsed_sec = (now - _time_start_heading_check) * 1e-6f;
-                    if (elapsed_sec > 1.f) {
+                    if (elapsed_sec > 0.5f) {
                         _attack_flag.heading_ok = true;
 
                         PX4_INFO("Heading Checked");
@@ -2323,8 +2335,8 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
             }
         }
 
-        const float ATTACK_RANGE_MAX = 300.f; // m
-        const float ATTACK_RANGE_MIN = 100.f; // m
+        const float ATTACK_RANGE_MAX = 200.f; // m
+        const float ATTACK_RANGE_MIN = 50.f; // m
 
         // PX4_INFO("Distance: %f", (double)distance_2d);
 
@@ -2350,12 +2362,16 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
     }
     
     if (_attack_flag.too_close) {
-        Vector2f offset_direction(diff(1), diff(0));
+        Vector2f offset_direction(-diff(0), -diff(1));
         offset_direction.normalize();
-        const float offset_distance = 200.f;
-        Vector2f side_point_local = attack_target_local + offset_direction * offset_distance;
+        const float offset_distance = 75.f;
+        
+        if(!_gain_realign_pos) {
+            _realign_pos = curr_pos_local + offset_direction * offset_distance;
+            _gain_realign_pos = true;
+        }
 
-        navigateWaypoint(side_point_local, curr_pos_local, ground_speed, _wind_vel);
+        navigateWaypoint(_realign_pos, curr_pos_local, ground_speed, _wind_vel);
 
         _att_sp.roll_body = getCorrectedNpfgRollSetpoint();
         _att_sp.yaw_body = _yaw;
@@ -2381,19 +2397,19 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
 
         // PX4_INFO("heading error: %f", (double)heading_error * 180 / M_PI);
 
-        // |heading_error| < 5 deg
+        // |heading_error| < 10 deg
         const float HEADING_THR = math::radians(10.f);
         bool is_heading_ok = (fabsf(heading_error) < HEADING_THR);
 
-        if (distance_2d > 100.f && is_heading_ok) {
+        if (distance_2d > 50.f && is_heading_ok) {
             PX4_INFO("Pulled Away from target, align now!");
             _attack_flag.too_close = false;
         }
     }
 
+#ifndef DEBUG
+    // Fixed angle attack
     if (_attack_flag.heading_ok && _attack_flag.distance_ok) {
-        // _scs.update();
-
         navigateWaypoint(attack_target_local, curr_pos_local, ground_speed, _wind_vel);
 
         _att_sp.yaw_body = _yaw;
@@ -2401,12 +2417,30 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
         // Test using fixed angle with npfg controller
         _att_sp.pitch_body = radians(-45.f);
         _att_sp.roll_body = getCorrectedNpfgRollSetpoint();
-        // _att_sp.pitch_body = get_scs_pitch();
-        // _att_sp.roll_body = get_scs_roll();
     }
+#endif // DEBUG
+
+#ifdef DEBUG
+    if (_attack_flag.heading_ok && _attack_flag.distance_ok) {
+        float pitch_setpoint = atan2f(_local_pos.z - _attack_position(2), distance_2d);
+        PX4_INFO("pitch err: %f", (double)(pitch_setpoint - _pitch) * 180 / M_PI);
+        // float heading_setpoint = atan2f(attack_target_local(1) - curr_pos_local(1), attack_target_local(0) - curr_pos_local(0));
+        _scs_pitch.update(pitch_setpoint, _pitch, control_interval);
+        // _scs_roll.update(heading_setpoint, _roll, 0.f, control_interval);
+
+        navigateWaypoint(attack_target_local, curr_pos_local, ground_speed, _wind_vel);
+
+        _att_sp.yaw_body = _yaw;
+        // Full throttle
+        _att_sp.thrust_body[0] = 1.f;
+        _att_sp.pitch_body = get_scs_pitch();
+        // _att_sp.pitch_body = pitch_setpoint + radians(_param_fw_psp_off.get());
+        _att_sp.roll_body = getCorrectedNpfgRollSetpoint();
+    }
+#endif // DEBUG
+
 }
 #endif // CONFIG_MODULES_SB_COMMANDER
-#endif // DEBUG
 
 float
 FixedwingPositionControl::get_tecs_pitch()
@@ -2430,19 +2464,25 @@ FixedwingPositionControl::get_tecs_thrust()
 	return 0.0f;
 }
 
-// #ifdef CONFIG_MODULES_SB_COMMANDER
-// float
-// FixedwingPositionControl::get_scs_pitch()
-// {
-//     return _scs.get_pitch_setpoint() + radians(_param_fw_psp_off.get());
-// }
+#ifdef DEBUG
+#ifdef CONFIG_MODULES_SB_COMMANDER
+float
+FixedwingPositionControl::get_scs_pitch()
+{
+    float setpoint = _scs_pitch.get_setpoint() + radians(_param_fw_psp_off.get());
+    PX4_INFO("pitch op: %f", (double)setpoint * 180 / M_PI);
+    return setpoint;
+}
 
 // float
 // FixedwingPositionControl::get_scs_roll()
 // {
-//     return _scs.get_roll_setpoint();
+//     float setpoint = _scs_roll.get_setpoint();
+//     // PX4_INFO("roll: %f", (double)setpoint); 
+//     return setpoint;    
 // }
-// #endif // CONFIG_MODULES_SB_COMMANDER
+#endif // CONFIG_MODULES_SB_COMMANDER
+#endif // DEBUG
 
 void
 FixedwingPositionControl::Run()
@@ -2634,9 +2674,10 @@ FixedwingPositionControl::Run()
 
 #ifdef CONFIG_MODULES_SB_COMMANDER
         if(_switchblade_command_sub.update(&_switchblade_command)) {
-            _attack_position(0) = _switchblade_command.attack_position[0];
-            _attack_position(1) = _switchblade_command.attack_position[1];
-            _attack_position(2) = _switchblade_command.attack_position[2];
+            // ENU -> NED
+            _attack_position(0) = _switchblade_command.attack_position[1];
+            _attack_position(1) = _switchblade_command.attack_position[0];
+            _attack_position(2) = -(_switchblade_command.attack_position[2]);
             
             if(_switchblade_command.attack_trigger) {
                 _attack_trigger = true;
@@ -2684,13 +2725,11 @@ FixedwingPositionControl::Run()
 			reset_takeoff_state();
 		}
 
-#ifdef DEBUG
 #ifdef CONFIG_MODULES_SB_COMMANDER
         if (_control_mode_current != FW_POSCTRL_MODE_ATTACK) {
 			reset_attack_state();
 		}
 #endif // CONFIG_MODULES_SB_COMMANDER
-#endif // DEBUG
 
 		int8_t old_landing_gear_position = _new_landing_gear_position;
 		_new_landing_gear_position = landing_gear_s::GEAR_KEEP; // is overwritten in Takeoff and Land
@@ -2752,15 +2791,12 @@ FixedwingPositionControl::Run()
 				control_backtransition(control_interval, ground_speed, _pos_sp_triplet.current);
 				break;
 			}
-#ifdef DEBUG
 #ifdef CONFIG_MODULES_SB_COMMANDER
         case FW_POSCTRL_MODE_ATTACK: {
                 control_attack(_local_pos.timestamp, control_interval, ground_speed);
                 break;
             }
 #endif // CONFIG_MODULES_SB_COMMANDER
-#endif // DEBUG
-
 		}
 
 
@@ -2869,8 +2905,8 @@ FixedwingPositionControl::reset_attack_state() {
     _attack_flag.distance_ok = false;
     _attack_flag.too_close = false;
     
-    _time_start_heading_check = 0.0f;
-    _time_start_distance_check = 0.0f;
+    _time_start_heading_check = 0.f;
+    _time_start_distance_check = 0.f;
 }
 #endif // CONFIG_MODULES_SB_COMMANDER
 
