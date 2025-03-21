@@ -160,6 +160,7 @@ set(msg_files
 	ParameterSetValueRequest.msg
 	ParameterSetValueResponse.msg
 	ParameterUpdate.msg
+    PidTuning.msg
 	Ping.msg
 	PositionControllerLandingStatus.msg
 	PositionControllerStatus.msg
@@ -201,6 +202,8 @@ set(msg_files
 	SensorsStatusImu.msg
 	SensorUwb.msg
 	SensorAirflow.msg
+    SwitchbladeCommand.msg
+    SwitchbladeStatus.msg
 	SystemPower.msg
 	TakeoffStatus.msg
 	TaskStackInfo.msg
@@ -250,8 +253,6 @@ set(msg_files
 	WheelEncoders.msg
 	Wind.msg
 	YawEstimatorStatus.msg
-    SwitchbladeCommand.msg
-    SwitchbladeStatus.msg
 )
 list(SORT msg_files)
 

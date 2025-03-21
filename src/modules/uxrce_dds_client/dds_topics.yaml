@@ -74,9 +74,11 @@ publications:
   - topic: /fmu/out/vehicle_trajectory_waypoint_desired
     type: px4_msgs::msg::VehicleTrajectoryWaypoint
 
-  # switchblade command
   - topic: /fmu/out/switchblade_command
     type: px4_msgs::msg::SwitchbladeCommand
+
+  - topic: /fmu/out/pid_tuning
+    type: px4_msgs::msg::PidTuning
 
 # Create uORB::Publication
 subscriptions:
@@ -166,8 +168,7 @@ subscriptions:
 
   - topic: /fmu/in/aux_global_position
     type: px4_msgs::msg::VehicleGlobalPosition
-  
-  # switchblade status callback
+
   - topic: /fmu/in/switchblade_status
     type: px4_msgs::msg::SwitchbladeStatus
 
