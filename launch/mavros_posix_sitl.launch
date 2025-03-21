@@ -11,9 +11,11 @@
     <arg name="Y" default="0"/>
     <!-- vehicle model and world -->
     <arg name="est" default="ekf2"/>
-    <arg name="vehicle" default="iris"/>
+    <arg name="vehicle" default="plane"/>
     <arg name="world" default="$(find mavlink_sitl_gazebo)/worlds/empty.world"/>
-    <arg name="sdf" default="/home/yxc/PX4_Firmware/Tools/sitl_gazebo/models/iris_stereo_camera/iris_stereo_camera.sdf"/>
+    <arg name="sdf" default="/home/yxc/PX4_Firmware/Tools/sitl_gazebo/models/switchblade/switchblade.sdf"/>
+    <!-- <arg name="sdf" default="/home/yxc/PX4_Firmware/Tools/sitl_gazebo/models/typhoon_h480/typhoon_h480.sdf"/> -->
+    <!-- <arg name="sdf" default="/home/yxc/PX4_Firmware/Tools/sitl_gazebo/models/iris_stereo_camera/iris_stereo_camera.sdf"/> -->
     <!-- <arg name="sdf" default="/home/yxc/PX4_Firmware/Tools/sitl_gazebo/models/iris/iris.sdf"/> -->
 
     <!-- gazebo configs -->
