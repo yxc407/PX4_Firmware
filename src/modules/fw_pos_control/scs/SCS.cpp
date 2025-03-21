@@ -41,27 +41,86 @@
 
 #include "SCS.h"
 
+#include <lib/geo/geo.h>
+
 using math::constrain;
 using matrix::Vector2f;
 using matrix::wrap_pi;
 using namespace time_literals;
 
-void SCS::init(float kp, float ki, float kd)
-{
+void PID::init(float kp, float ki, float kd, float ff) {
     _kp = kp;
     _ki = ki;
     _kd = kd;
+    _ff = ff;
+    _integral = 0.f;
+    _prev_error = 0.f;
+    _is_first_calculate = true;
 }
 
-void SCS::update(float sp, float val, float dt)
+float PID::pid_calculate(float setpoint, float actual, float dt)
 {
-    _setpoint = pid_calculate(sp, val, dt);
-}
+    float error = setpoint - actual;
 
-float SCS::pid_calculate(float sp, float val, float dt)
-{
-    // float err = sp - val;
-    float output = _kp * sp;
+    _integral += error * dt;
+
+    float derivative = (error - _prev_error) / dt;
+    _prev_error = error;
+    if (_is_first_calculate) {
+        derivative = 0.f;
+        _is_first_calculate = false;
+    }
+
+    float output = _ff * setpoint + _kp * error + _ki * _integral + _kd * derivative;
 
     return output;
+}
+
+void SCS::init(float kp_pitch,
+               float ki_pitch,
+               float kd_pitch,
+               float ff_pitch,
+               float kp_heading,
+               float ki_heading,
+               float kd_heading,
+               float kp_roll,
+               float ki_roll,
+               float kd_roll,
+               float ff_roll)
+{
+    pitch_pid.init(kp_pitch,
+                   ki_pitch,
+                   kd_pitch,
+                   ff_pitch);
+    
+
+    heading_pid.init(kp_heading,
+                     ki_heading,
+                     kd_heading,
+                     0.f);
+
+    roll_pid.init(kp_roll,
+                  ki_roll,
+                  kd_roll,
+                  ff_roll);
+}
+
+void SCS::update(float pitch_setpoint, float pitch_actual, float heading_setpoint, float heading_actual, float roll_actual, float airspeed, float dt)
+{
+    _pitch_output = pitch_pid.pid_calculate(pitch_setpoint, pitch_actual, dt);
+
+    _heading_rate = heading_pid.pid_calculate(heading_setpoint, heading_actual, dt);
+    // PX4_INFO("yaw curr: %f, yaw sp: %f, yaw err: %f, yaw op: %f",
+    //         (double)heading_actual,
+    //         (double)heading_setpoint,
+    //         (double)(heading_setpoint - heading_actual),
+    //         (double)_heading_rate);
+    // ideal situation: roll(rad) = arctan(yaw_rate(rad / s) * airspeed(m / s) / G(m / s^2))
+    float roll_setpoint = atanf(_heading_rate * airspeed / CONSTANTS_ONE_G);
+    _roll_output = roll_pid.pid_calculate(roll_setpoint, roll_actual, dt);
+    PX4_INFO("roll curr: %f, roll sp: %f,roll err: %f,roll op: %f",
+            (double)roll_actual * 180.0 / M_PI,
+            (double)roll_setpoint * 180.0 / M_PI,
+            (double)(roll_setpoint - roll_actual) * 180.0 / M_PI,
+            (double)_roll_output * 180.0 / M_PI);
 }

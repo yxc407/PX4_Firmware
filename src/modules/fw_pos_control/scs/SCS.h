@@ -54,26 +54,57 @@
 
 using matrix::Vector2f;
 
+class PID
+{
+public:
+    void init(float kp, float ki, float kd, float ff);
+    float pid_calculate(float sp, float val, float dt);
+    void reset_integral() { _integral = 0.f; }
+
+private:
+    float _kp{0.f};
+    float _ki{0.f};
+    float _kd{0.f};
+    float _ff{0.f};
+
+    float _integral{0.f};
+    float _prev_error{0.f};
+    bool _is_first_calculate{true};
+};
+
 class __EXPORT SCS
 {
 public:
     SCS() = default;
     ~SCS() = default;
 
-    void init(float kp, float ki, float kd);
+    void init(float kp_pitch,
+              float ki_pitch,
+              float kd_pitch,
+              float ff_pitch,
+              float kp_heading,
+              float ki_heading,
+              float kd_heading,
+              float kp_roll,
+              float ki_roll,
+              float kd_roll,
+              float ff_roll);
 
-    void update(float sp, float val, float dt);
+    void update(float pitch_setpoint, float pitch_actual,
+                float heading_setpoint, float heading_actual, float roll_actual, float airspeed,
+                float dt);
 
-    inline float get_setpoint() { return _setpoint; }
+    inline float get_pitch_output() { return _pitch_output; }
+    inline float get_roll_output() { return _roll_output; }
 
 private:
-    float pid_calculate(float sp, float val, float dt);
+    PID pitch_pid;
+    PID heading_pid;
+    PID roll_pid;
 
-private:
-    float _kp{0.f};
-    float _ki{0.f};
-    float _kd{0.f};
-    float _setpoint{0.f};
+    float _pitch_output{0.f};
+    float _heading_rate{0.f};
+    float _roll_output{0.f};
 };
 
 #endif /* SCS_H */

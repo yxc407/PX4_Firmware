@@ -72,6 +72,10 @@ FixedwingPositionControl::FixedwingPositionControl(bool vtol) :
 	_flaps_setpoint_pub.advertise();
 	_spoilers_setpoint_pub.advertise();
 
+#ifdef PID_TUNING
+    _pid_tuning_pub.advertise();
+#endif // PID_TUNING
+
 	_airspeed_slew_rate_controller.setSlewRate(ASPD_SP_SLEW_RATE);
 
 	/* fetch initial parameter values */
@@ -81,20 +85,23 @@ FixedwingPositionControl::FixedwingPositionControl(bool vtol) :
 	_roll_slew_rate.setForcedValue(0.f);
 #ifdef DEBUG
 #ifdef CONFIG_MODULES_SB_COMMANDER
-    float kp_pitch = 1.4f;
-    float ki_pitch = 0.f;
-    float kd_pitch = 0.f;
-    // float integral_limit_pitch = 2.f;
-    // float output_limit_pitch = radians(60.f);
+    float kp_pitch = 0.5f;
+    float ki_pitch = 0.01f;
+    float kd_pitch = 0.1f;
+    float ff_pitch = 1.4f;
 
-    // float kp_roll = 0.5f;
-    // float ki_roll = 0.f;
-    // float kd_roll = 0.f;
-    // float integral_limit_roll = 0.f;
-    // float output_limit_roll = radians(45.f);
+    float kp_heading = 1.f;
+    float ki_heading = 0.02f;
+    float kd_heading = 0.f;
 
-    _scs_pitch.init(kp_pitch, ki_pitch, kd_pitch);
-    // _scs_roll.init(kp_roll, ki_roll, kd_roll, integral_limit_roll, output_limit_roll);
+    float kp_roll = 1.f;
+    float ki_roll = 0.01f;
+    float kd_roll = 0.2f;
+    float ff_roll = 1.f;
+
+    _scs.init(kp_pitch, ki_pitch, kd_pitch, ff_pitch,
+              kp_heading, ki_heading, kd_heading,
+              kp_roll, ki_roll, kd_roll, ff_roll);
 #endif // CONFIG_MODULES_SB_COMMANDER
 #endif // DEBUG
 }
@@ -331,6 +338,7 @@ FixedwingPositionControl::vehicle_attitude_poll()
 		}
 
 		const Eulerf euler_angles(R);
+        _roll = euler_angles(0);
 		_pitch = euler_angles(1);
 		_yaw = euler_angles(2);
 
@@ -522,6 +530,21 @@ FixedwingPositionControl::landing_status_publish()
 
 	_pos_ctrl_landing_status_pub.publish(pos_ctrl_landing_status);
 }
+
+#ifdef PID_TUNING
+void
+FixedwingPositionControl::pid_tuning_publish(float setpoint, float output)
+{
+    pid_tuning_s pid_tuning = {};
+
+    pid_tuning.current = _pitch;
+    pid_tuning.setpoint = setpoint;
+    pid_tuning.output = output;
+    pid_tuning.timestamp = hrt_absolute_time();
+
+    _pid_tuning_pub.publish(pid_tuning);
+}
+#endif // PID_TUNING
 
 float FixedwingPositionControl::getCorrectedNpfgRollSetpoint()
 {
@@ -2313,8 +2336,8 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
 
             // PX4_INFO("heading error: %f", (double)heading_error * 180 / M_PI);
 
-            // |heading_error| < 10 deg
-            const float HEADING_THR = math::radians(10.f);
+            // |heading_error| < 5 deg
+            const float HEADING_THR = math::radians(5.f);
             bool is_heading_ok = (fabsf(heading_error) < HEADING_THR);
 
             if (is_heading_ok) {
@@ -2324,7 +2347,7 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
                     PX4_INFO("Start Heading Check");
                 } else {
                     const float elapsed_sec = (now - _time_start_heading_check) * 1e-6f;
-                    if (elapsed_sec > 0.5f) {
+                    if (elapsed_sec > 1.f) {
                         _attack_flag.heading_ok = true;
 
                         PX4_INFO("Heading Checked");
@@ -2333,10 +2356,18 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
             } else {
                 _time_start_heading_check = 0.f;
             }
+
+            if(!is_heading_ok && fabsf(distance_2d) < 120) {
+                _attack_flag.too_close = true;
+                _attack_flag.heading_ok = false;
+                _attack_flag.distance_ok = false;
+
+                PX4_INFO("Too Close, Realign");
+            }
         }
 
-        const float ATTACK_RANGE_MAX = 200.f; // m
-        const float ATTACK_RANGE_MIN = 50.f; // m
+        const float ATTACK_RANGE_MAX = 120.f; // m
+        const float ATTACK_RANGE_MIN = 25.f; // m
 
         // PX4_INFO("Distance: %f", (double)distance_2d);
 
@@ -2397,11 +2428,11 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
 
         // PX4_INFO("heading error: %f", (double)heading_error * 180 / M_PI);
 
-        // |heading_error| < 10 deg
-        const float HEADING_THR = math::radians(10.f);
+        // |heading_error| < 5 deg
+        const float HEADING_THR = math::radians(5.f);
         bool is_heading_ok = (fabsf(heading_error) < HEADING_THR);
 
-        if (distance_2d > 50.f && is_heading_ok) {
+        if (distance_2d > 25.f && is_heading_ok) {
             PX4_INFO("Pulled Away from target, align now!");
             _attack_flag.too_close = false;
         }
@@ -2423,19 +2454,20 @@ FixedwingPositionControl::control_attack(const hrt_abstime &now, const float con
 #ifdef DEBUG
     if (_attack_flag.heading_ok && _attack_flag.distance_ok) {
         float pitch_setpoint = atan2f(_local_pos.z - _attack_position(2), distance_2d);
-        PX4_INFO("pitch err: %f", (double)(pitch_setpoint - _pitch) * 180 / M_PI);
-        // float heading_setpoint = atan2f(attack_target_local(1) - curr_pos_local(1), attack_target_local(0) - curr_pos_local(0));
-        _scs_pitch.update(pitch_setpoint, _pitch, control_interval);
-        // _scs_roll.update(heading_setpoint, _roll, 0.f, control_interval);
+        float heading_setpoint = atan2f(_attack_position(1) - _local_pos.y, _attack_position(0) - _local_pos.x);
+
+        _scs.update(pitch_setpoint, _pitch, heading_setpoint, _yaw, _roll, _airspeed_eas, control_interval);
 
         navigateWaypoint(attack_target_local, curr_pos_local, ground_speed, _wind_vel);
 
         _att_sp.yaw_body = _yaw;
-        // Full throttle
         _att_sp.thrust_body[0] = 1.f;
         _att_sp.pitch_body = get_scs_pitch();
         // _att_sp.pitch_body = pitch_setpoint + radians(_param_fw_psp_off.get());
-        _att_sp.roll_body = getCorrectedNpfgRollSetpoint();
+#ifdef PID_TUNING
+        pid_tuning_publish(pitch_setpoint, _att_sp.pitch_body);
+#endif // PID_TUNING
+        _att_sp.roll_body = get_scs_roll();
     }
 #endif // DEBUG
 
@@ -2469,18 +2501,19 @@ FixedwingPositionControl::get_tecs_thrust()
 float
 FixedwingPositionControl::get_scs_pitch()
 {
-    float setpoint = _scs_pitch.get_setpoint() + radians(_param_fw_psp_off.get());
-    PX4_INFO("pitch op: %f", (double)setpoint * 180 / M_PI);
-    return setpoint;
+    float output = _scs.get_pitch_output() + radians(_param_fw_psp_off.get());
+#ifdef PID_TUNING
+    _pid_tuning.output = output;
+#endif // PID_TUNING
+    return output;
 }
 
-// float
-// FixedwingPositionControl::get_scs_roll()
-// {
-//     float setpoint = _scs_roll.get_setpoint();
-//     // PX4_INFO("roll: %f", (double)setpoint); 
-//     return setpoint;    
-// }
+float
+FixedwingPositionControl::get_scs_roll()
+{
+    float output = _scs.get_roll_output();
+    return output;    
+}
 #endif // CONFIG_MODULES_SB_COMMANDER
 #endif // DEBUG
 
@@ -2673,7 +2706,7 @@ FixedwingPositionControl::Run()
 		}
 
 #ifdef CONFIG_MODULES_SB_COMMANDER
-        if(_switchblade_command_sub.update(&_switchblade_command)) {
+        if (_switchblade_command_sub.update(&_switchblade_command)) {
             // ENU -> NED
             _attack_position(0) = _switchblade_command.attack_position[1];
             _attack_position(1) = _switchblade_command.attack_position[0];

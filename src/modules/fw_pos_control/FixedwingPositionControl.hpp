@@ -48,6 +48,10 @@
 #define DEBUG
 #endif // DEBUG
 
+// #ifndef PID_TUNING
+// #define PID_TUNING
+// #endif // PID_TUNING
+
 #ifndef FIXEDWINGPOSITIONCONTROL_HPP_
 #define FIXEDWINGPOSITIONCONTROL_HPP_
 
@@ -115,6 +119,10 @@
 #include <uORB/topics/switchblade_command.h>
 #include <uORB/topics/switchblade_status.h>
 #endif // CONFIG_MODULES_SB_COMMANDER
+
+#ifdef PID_TUNING
+#include <uORB/topics/pid_tuning.h>
+#endif // PID_TUNING
 
 using namespace launchdetection;
 using namespace runwaytakeoff;
@@ -243,6 +251,9 @@ private:
 	uORB::Publication<normalized_unsigned_setpoint_s> _flaps_setpoint_pub{ORB_ID(flaps_setpoint)};
 	uORB::Publication<normalized_unsigned_setpoint_s> _spoilers_setpoint_pub{ORB_ID(spoilers_setpoint)};
 	uORB::PublicationData<flight_phase_estimation_s> _flight_phase_estimation_pub{ORB_ID(flight_phase_estimation)};
+#ifdef PID_TUNING
+    uORB::Publication<pid_tuning_s> _pid_tuning_pub{ORB_ID(pid_tuning)};
+#endif // PID_TUNING
 
 	manual_control_setpoint_s _manual_control_setpoint{};
 	position_setpoint_triplet_s _pos_sp_triplet{};
@@ -431,8 +442,7 @@ private:
     // SCS
 
     // switchblade control system - suicide control
-    SCS _scs_pitch;
-    // SCS _scs_roll;
+    SCS _scs;
 #endif // CONFIG_MODULES_SB_COMMANDER
 #endif // DEBUG
 
@@ -508,6 +518,10 @@ private:
 	void landing_status_publish();
 	void tecs_status_publish(float alt_sp, float equivalent_airspeed_sp, float true_airspeed_derivative_raw,
 				 float throttle_trim);
+#ifdef PID_TUNING
+    void pid_tuning_publish(float setpoint, float output);
+#endif // PID_TUNING
+
 	void publishLocalPositionSetpoint(const position_setpoint_s &current_waypoint);
 	float getLoadFactor();
 
