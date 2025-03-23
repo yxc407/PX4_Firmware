@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# Flight startup script for TCFMU standalone configuration.
+#
+
+echo "[i] doing standalone TCFMU startup..."
+
+echo "[i] startup done"

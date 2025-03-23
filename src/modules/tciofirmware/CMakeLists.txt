@@ -1,0 +1,61 @@
+############################################################################
+#
+#   Copyright (c) 2015-2017 TC Development Team. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name TC nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+
+option(TCIO_PERF "Enable tcio perf counters" OFF)
+
+add_library(tciofirmware
+	adc.cpp
+	controls.cpp
+	mixer.cpp
+	tcio.cpp
+	registers.c
+	safety_button.cpp
+	serial.cpp
+)
+
+set_property(GLOBAL APPEND PROPERTY TC_MODULE_LIBRARIES tciofirmware)
+target_link_libraries(tciofirmware
+	PUBLIC
+		arch_io_pins
+		arch_watchdog_iwdg
+		nuttx_apps
+		nuttx_arch
+		nuttx_c
+		nuttx_mm
+		rc
+)
+
+if(TCIO_PERF)
+	target_compile_definitions(tciofirmware PRIVATE TCIO_PERF)
+	target_link_libraries(tciofirmware PRIVATE perf)
+endif()

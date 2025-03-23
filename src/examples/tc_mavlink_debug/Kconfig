@@ -1,0 +1,5 @@
+menuconfig EXAMPLES_TC_MAVLINK_DEBUG
+	bool "tc_mavlink_debug"
+	default n
+	---help---
+		Enable support for tc_mavlink_debug

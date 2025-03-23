@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "TC",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/thuncloud/TC-Autopilot/boards/thuncloud/fmu-v1/src",
+                "/home/thuncloud/TC-Autopilot/platforms/nuttx/src/tc/stm/stm32h7/include",
+                "/home/thuncloud/TC-Autopilot/platforms/nuttx/NuttX/nuttx/include/"
+            ],
+            "defines": [],
+            "macFrameworkPath": [],
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "cppStandard": "c++14",
+            "cStandard": "c11",
+            "dotConfig": "/home/thuncloud/TC-Autopilot/build/thuncloud_fmu-v1_default/NuttX/nuttx/.config",
+            "forcedInclude": [
+                 "/home/thuncloud/TC-Autopilot/build/thuncloud_fmu-v1_default/tc_boardconfig.h",
+                 "/home/thuncloud/TC-Autopilot/platforms/common/include/tc_platform_common/defines.h"
+                 ]
+        }
+    ],
+    "version": 4
+}

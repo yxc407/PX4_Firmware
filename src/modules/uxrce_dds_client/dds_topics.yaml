@@ -1,0 +1,89 @@
+#####
+#
+# This file maps all the topics that are to be used on the uXRCE-DDS client.
+#
+#####
+publications:
+
+  - topic: /fmu/out/collision_constraints
+    type: tc_msgs::msg::CollisionConstraints
+
+  - topic: /fmu/out/failsafe_flags
+    type: tc_msgs::msg::FailsafeFlags
+
+  - topic: /fmu/out/position_setpoint_triplet
+    type: tc_msgs::msg::PositionSetpointTriplet
+
+  - topic: /fmu/out/sensor_combined
+    type: tc_msgs::msg::SensorCombined
+
+  - topic: /fmu/out/timesync_status
+    type: tc_msgs::msg::TimesyncStatus
+
+  # - topic: /fmu/out/vehicle_angular_velocity
+  #   type: tc_msgs::msg::VehicleAngularVelocity
+
+  - topic: /fmu/out/vehicle_attitude
+    type: tc_msgs::msg::VehicleAttitude
+
+  - topic: /fmu/out/vehicle_control_mode
+    type: tc_msgs::msg::VehicleControlMode
+
+  - topic: /fmu/out/vehicle_global_position
+    type: tc_msgs::msg::VehicleGlobalPosition
+
+  - topic: /fmu/out/vehicle_gps_position
+    type: tc_msgs::msg::SensorGps
+
+  - topic: /fmu/out/vehicle_local_position
+    type: tc_msgs::msg::VehicleLocalPosition
+
+  - topic: /fmu/out/vehicle_odometry
+    type: tc_msgs::msg::VehicleOdometry
+
+  - topic: /fmu/out/vehicle_status
+    type: tc_msgs::msg::VehicleStatus
+
+  - topic: /fmu/out/vehicle_trajectory_waypoint_desired
+    type: tc_msgs::msg::VehicleTrajectoryWaypoint
+
+subscriptions:
+
+  - topic: /fmu/in/offboard_control_mode
+    type: tc_msgs::msg::OffboardControlMode
+
+  - topic: /fmu/in/onboard_computer_status
+    type: tc_msgs::msg::OnboardComputerStatus
+
+  - topic: /fmu/in/obstacle_distance
+    type: tc_msgs::msg::ObstacleDistance
+
+  - topic: /fmu/in/sensor_optical_flow
+    type: tc_msgs::msg::SensorOpticalFlow
+
+  - topic: /fmu/in/telemetry_status
+    type: tc_msgs::msg::TelemetryStatus
+
+  - topic: /fmu/in/trajectory_setpoint
+    type: tc_msgs::msg::TrajectorySetpoint
+
+  - topic: /fmu/in/vehicle_attitude_setpoint
+    type: tc_msgs::msg::VehicleAttitudeSetpoint
+
+  - topic: /fmu/in/vehicle_mocap_odometry
+    type: tc_msgs::msg::VehicleOdometry
+
+  - topic: /fmu/in/vehicle_rates_setpoint
+    type: tc_msgs::msg::VehicleRatesSetpoint
+
+  - topic: /fmu/in/vehicle_visual_odometry
+    type: tc_msgs::msg::VehicleOdometry
+
+  - topic: /fmu/in/vehicle_command
+    type: tc_msgs::msg::VehicleCommand
+
+  - topic: /fmu/in/vehicle_trajectory_bezier
+    type: tc_msgs::msg::VehicleTrajectoryBezier
+
+  - topic: /fmu/in/vehicle_trajectory_waypoint
+    type: tc_msgs::msg::VehicleTrajectoryWaypoint

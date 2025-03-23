@@ -1,0 +1,5 @@
+menuconfig EXAMPLES_TC_SIMPLE_APP
+	bool "tc_simple_app"
+	default n
+	---help---
+		Enable support for tc_simple_app

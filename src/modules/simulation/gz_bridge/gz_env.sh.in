@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+export TC_GZ_MODELS=@TC_SOURCE_DIR@/Tools/simulation/gz/models
+export TC_GZ_WORLDS=@TC_SOURCE_DIR@/Tools/simulation/gz/worlds
+
+export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:$TC_GZ_MODELS:$TC_GZ_WORLDS

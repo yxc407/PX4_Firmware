@@ -1,0 +1,8 @@
+#!/bin/sh
+# TC commands need the 'tc-' prefix in bash.
+# (tc-alias.sh is expected to be in the PATH)
+. tc-alias.sh
+
+dyn ./examples__dyn_hello.tcmod PASSED
+
+shutdown

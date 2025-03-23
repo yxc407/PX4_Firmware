@@ -1,0 +1,5 @@
+menuconfig MODULES_TCIOFIRMWARE
+	bool "tciofirmware"
+	default n
+	---help---
+		Enable support for tciofirmware

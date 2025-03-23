@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "TC",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "@TC_BOARD_DIR@/src",
+                "@TC_SOURCE_DIR@/platforms/nuttx/src/tc/@TC_CHIP_MANUFACTURER@/@TC_CHIP@/include",
+                "@TC_SOURCE_DIR@/platforms/nuttx/NuttX/nuttx/include/"
+            ],
+            "defines": [],
+            "macFrameworkPath": [],
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "cppStandard": "c++14",
+            "cStandard": "c11",
+            "dotConfig": "@TC_BINARY_DIR@/NuttX/nuttx/.config",
+            "forcedInclude": [
+                 "@TC_BINARY_DIR@/tc_boardconfig.h",
+                 "@TC_SOURCE_DIR@/platforms/common/include/tc_platform_common/defines.h"
+                 ]
+        }
+    ],
+    "version": 4
+}

@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "TC",
+            "includePath": [
+                "${workspaceFolder}/**",
+            ],
+            "defines": [],
+            "macFrameworkPath": [],
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "cppStandard": "c++14",
+            "cStandard": "c11",
+            "forcedInclude": [
+                 "@TC_BINARY_DIR@/tc_boardconfig.h",
+                 "@TC_SOURCE_DIR@/platforms/common/include/tc_platform_common/defines.h"
+                 ]
+        }
+    ],
+    "version": 4
+}

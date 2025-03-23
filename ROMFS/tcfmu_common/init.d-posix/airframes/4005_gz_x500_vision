@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# @name Gazebo x500 vision
+#
+# @type Quadrotor
+#
+
+TC_SIM_MODEL=${TC_SIM_MODEL:=x500_vision}
+
+. ${R}etc/init.d-posix/airframes/4001_gz_x500

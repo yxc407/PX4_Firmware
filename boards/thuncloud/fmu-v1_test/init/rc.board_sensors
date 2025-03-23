@@ -1,0 +1,11 @@
+board_adc start
+
+mpu9250 -s -b 1 -M start
+
+icm20948 -s -b 2 -M start
+
+mpu6500 -s -b 5 start
+
+bmp280 -I -b 4 -a 0x76 start
+
+ms5611 -I -b 4 -a 0x77 start
