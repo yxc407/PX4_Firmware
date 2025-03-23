@@ -337,12 +337,12 @@ const char *tc_toolchain_version(void)
 
 const char *tc_firmware_version_string(void)
 {
-	return TC_GIT_VERSION_STR;
+	return "v1.9.0";
 }
 
 uint64_t tc_firmware_version_binary(void)
 {
-	return TC_GIT_VERSION_BINARY;
+	return 0x010900FF;
 }
 
 
